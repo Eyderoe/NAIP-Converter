@@ -1,2 +1,3 @@
 # NAIP-Transform
-提取中国民航国内航空资料汇编National Aeronautical Information Publication中的内容，写入游戏数据库。
+最低配置：已去除水印的数据库编码和航路点坐标pdf文件\
+建议配置：完整包含有csv文件的一期naip
