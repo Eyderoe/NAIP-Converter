@@ -29,7 +29,7 @@ def read_xp_file(file_path: str, source: int, point_list: List[Waypoint]) -> Lis
                 ident = i_line[7]
                 airport = i_line[8]
                 area = i_line[9]
-            point_list.append(Waypoint(la, long, ident, -1,airport, area))
+            point_list.append(Waypoint(la, long, ident, -1, airport, area))
     return header
 
 
@@ -50,12 +50,19 @@ def read_naip_file(file_path: str) -> List[Waypoint]:
             else:
                 airport = extract_name(iNaipFile)[:4]
                 area = airport[:2]
-            points.append(Waypoint(la, long, ident,-1, airport, area))
+            points.append(Waypoint(la, long, ident, -1, airport, area))
     return points
+
+
+def waypoint_type(ident: str) -> int:
+    """根据ARINC424 5.42和XPlane FIX1101初略计算"""
+    coding = "W  "  # 默认RNAV航路点
+    return ord(coding[0]) * (2 ** 0) + ord(coding[1]) * (2 ** 8)+ ord(coding[2]) * (2 ** 16)
 
 
 # 突然想写cpp了 艹
 init(autoreset=True)
+forXp11 = True
 naipPath = r"F:\PDF初提取"
 earth_nav = r"E:\steampower\steamapps\common\X-Plane 11\Custom Data\earth_nav.dat"
 earth_fix = r"E:\steampower\steamapps\common\X-Plane 11\Custom Data\earth_fix.dat"
@@ -108,7 +115,12 @@ for iNaipFile in naipFiles:
 
 with open(earth_fix, 'r') as file:
     file = file.readlines()[:-1]
-file += [(lambda x: "{} {} {} {} {}\n".format(x.latitude, x.longitude, x.ident, x.airport, x.area))(i) for i in naip]
+if forXp11:
+    file += [(lambda x: "{} {} {} {} {} {}\n".format(x.latitude, x.longitude, x.ident, x.airport, x.area,
+                                                     waypoint_type(x.ident)))(i) for i in naip]
+else:
+    file += [(lambda x: "{} {} {} {} {} {} {}\n".format(x.latitude, x.longitude, x.ident, x.airport, x.area,
+                                                        waypoint_type(x.ident), x.ident))(i) for i in naip]
 file += ["99\n"]
 with open(r".\output\fix.dat", 'w') as f:
     f.writelines(file)

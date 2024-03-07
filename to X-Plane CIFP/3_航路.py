@@ -133,6 +133,7 @@ def read_points(folder: str):
             waypoints.add_point(i_point)
     with open(os.path.join(folder, "earth_nav.dat"), 'r', encoding="utf-8") as f:
         f = f.readlines()
+        f = [i for i in f if not empty(i, 4)]
         f = f[3:-1]
         for iLine in f:
             i_point = iLine.split()

@@ -54,7 +54,7 @@ for iLoc in range(vor.shape[0]):
     if isFind:
         continue
 
-    stationText = "3 {} {} {} {} {} {} {} {}  {} {} {} \n".format(station.latitude, station.longitude,
+    stationText = "3 {} {} {} {} {} {} {} {} {} {} {} \n".format(station.latitude, station.longitude,
                                                                   int(int(vor.iloc[iLoc, 12]) * 3.28),
                                                                   int(float(vor.iloc[iLoc, 9]) * 100), 130,
                                                                   float(vor.iloc[iLoc, 11]), station.ident, "ENRT",
@@ -62,7 +62,7 @@ for iLoc in range(vor.shape[0]):
                                                                   pinyin.get(vor.iloc[iLoc, 5], format='strip',
                                                                              delimiter='').upper(), "VOR/DME")
     vorText.append(stationText)
-    stationText = "12 {} {} {} {} {} {} {} {}  {} {} {} \n".format(station.latitude, station.longitude,
+    stationText = "12 {} {} {} {} {} {} {} {} {} {} {} \n".format(station.latitude, station.longitude,
                                                                    int(int(vor.iloc[iLoc, 12]) * 3.28),
                                                                    int(float(vor.iloc[iLoc, 9]) * 100), 130,
                                                                    0, station.ident, "ENRT", area(vor.iloc[iLoc, 1]),
@@ -84,7 +84,7 @@ for iLoc in range(ndb.shape[0]):
     if isFind:
         continue
 
-    stationText = "2 {} {} {} {} {} {} {} {}  {} {} {} \n".format(station.latitude, station.longitude,
+    stationText = "2 {} {} {} {} {} {} {} {} {} {} {} \n".format(station.latitude, station.longitude,
                                                                   int(int(ndb.iloc[iLoc, 12]) * 3.28),
                                                                   int(float(ndb.iloc[iLoc, 9]) * 1), 50,
                                                                   0.0, station.ident, "ENRT",

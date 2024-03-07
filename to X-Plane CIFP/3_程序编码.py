@@ -1,6 +1,4 @@
 import os.path
-import pandas as pd
-from typing import Union
 from geopy.distance import distance
 from geopy.point import Point
 from 公共函数 import *
@@ -96,8 +94,15 @@ class Procedure:
                 return default
 
         def alt_process(alt: str) -> List[str]:
-            if empty(alt, 4) or ("MAP" in alt):
+            if empty(alt, 4):
                 return [' ', "     ", "     "]
+            elif "MAP" in alt:
+                alt = 0
+                if airportNow in altitudeDict:
+                    alt = altitudeDict[airportNow]
+                if "{}_{}".format(airportNow, self.runway) in altitudeDict:
+                    alt = altitudeDict["{}_{}".format(airportNow, self.runway)]
+                return [' ', digit_process(str(alt + 50), 5, 0), "     "]  # TCH统一50
             elif ('B' in alt) and ('A' in alt):
                 alt = alt.replace('A', '')
                 alt = alt.split('B')
@@ -111,9 +116,11 @@ class Procedure:
             else:
                 return ['@', alt, "     "]
 
-        global transHeight
+        global transHeight, airportNow, altitudeDict
         self.create_number()
         self.length = len(self.legs)
+        final_app = False
+        already_encode = False
         for iLegLoc in range(len(self.legs)):
             i_leg = self.legs[iLegLoc].split(',')
             text = list()
@@ -121,6 +128,8 @@ class Procedure:
             text.append(self.ptype + ':' + digit_process(str(self.number[iLegLoc]), 2, 1))
             # 程序类型
             text.append(i_leg[1])
+            if i_leg[1] == 'R':
+                final_app = True
             # 程序名 2
             text.append(self.name)
             # 过渡
@@ -129,17 +138,25 @@ class Procedure:
             if (i_leg[8] == "MAP") and empty(i_leg[4], 4):
                 i_leg[4] = "RW" + self.runway
             text.append(i_leg[4])
-            text += waypoint_info(i_leg[4])
+            point_info = waypoint_info(i_leg[4])
+            text += point_info
             # 描述 8
+            if point_info[1:] == ['D', ' ']:  # VHF作为航点
+                i_leg[11] = 'V' + i_leg[11][1:]
+            elif point_info[1:] == ['D', 'B']:  # NDB作为航点
+                i_leg[11] = 'N' + i_leg[11][1:]
             text.append(i_leg[11])
             # 转向
             text.append(i_leg[5])
             # RNP值 10 不想改前面的代码了 默认0.3
-            text.append("302")
+            if (self.ptype == "APPCH") and (i_leg[3] == "IF"):
+                text.append("   ")
+            else:
+                text.append("302")
             # 航段类型
             text.append(i_leg[3])
             # 一坨没用的 12
-            text += [' ', "  ", ' ', ' ', ' ']
+            text += [' ', ' ', ' ', ' ', ' ']
             # RF半径 17 还是算一算好 不然会吞点
             if text[11] != "RF":
                 text.append(digit_process('-', 3, 3))
@@ -181,8 +198,17 @@ class Procedure:
             else:
                 text += ['-' + str(int(float(i_leg[9]) * 100)), "   "]
             # 中心点 30
-            text.append(i_leg[10])
-            text += waypoint_info(i_leg[10])
+            use_airport = False
+            if (iLegLoc == 0) and (self.ptype == "SID" or self.ptype == "STAR"):
+                use_airport = True
+            if final_app and (not already_encode):
+                use_airport = True
+                already_encode = True
+            if use_airport:
+                text += [airportNow, airportNow[:2], 'P', 'A']
+            else:
+                text.append(i_leg[10])
+                text += waypoint_info(i_leg[10])
             # 杂
             text.append(' ')
             if self.ptype == "APPCH":
@@ -372,7 +398,9 @@ def digit_process(x: str, front: int, back: int, fla: bool = False) -> str:
     return x
 
 
-def read_csv_trans(csv: str) -> dict:
+def read_csv_trans(csv_path: str) -> dict:
+    """读取Trans Level"""
+
     def alt_change(alt: str) -> int:
         alt = str(int(int(alt) * 3.28))
         tail = int(alt[-2:])
@@ -383,7 +411,7 @@ def read_csv_trans(csv: str) -> dict:
             return int(alt) + 100
 
     table = dict()
-    df = pd.read_csv(csv, encoding="gbk")
+    df = pd.read_csv(csv_path, encoding="gbk")
     df.fillna('0', inplace=True)
     for iLoc in range(df.shape[0]):
         table[df.iloc[iLoc, 4]] = (alt_change(df.iloc[iLoc, 15]), alt_change(df.iloc[iLoc, 17]))
@@ -435,25 +463,120 @@ def procedure_mix(airport_name: str, cifp_path: str):
     edit_file.close()
 
 
+def altitude_database(csv_folder: str) -> dict:
+    """返回一个包含机场和跑道高度的字典"""
+    database = dict()
+
+    port_df = pd.read_csv(os.path.join(csv_folder, "AD_HP.csv"), encoding="gbk")
+    port_df.fillna('0', inplace=True)
+    for iLoc in range(port_df.shape[0]):
+        database[port_df.iloc[iLoc, 4]] = float(port_df.iloc[iLoc, 10]) * 3.28
+
+    rwy_df = pd.read_csv(os.path.join(csv_folder, "RWY.csv"), encoding="gbk")
+    rwy_df.fillna('0', inplace=True)
+    rwy_dir_df = pd.read_csv(os.path.join(csv_folder, "RWY_DIRECTION.csv"), encoding="gbk")
+    rwy_dir_df.fillna('0', inplace=True)
+    for iLoc in range(port_df.shape[0]):
+        icao = rwy_df.iloc[iLoc, 2]
+        rwy_id = rwy_df.iloc[iLoc, 0]
+        results = rwy_dir_df[rwy_dir_df["RWY_ID"] == rwy_id]
+        for jLoc in range(results.shape[0]):
+            rwy_ident = results.iloc[jLoc, 2]
+            if len(rwy_ident) == 1:
+                rwy_ident = '0' + rwy_ident
+            database["{}_{}".format(icao, rwy_ident)] = float(results.iloc[jLoc, 4]) * 3.28
+    return database
+
+
+def runway_info(proces: List[str], alt_info: dict) -> str:
+    """
+    返回跑道信息行
+    :param proces: 进近程序
+    :param alt_info: 高度信息
+    :return: 处理好的跑道信息
+    """
+    global airportPoints, airportNow
+    proces = [i.split(',')[2:9] for i in proces]
+    der = dict()
+    for iPoint in proces:
+        describe = iPoint[6]
+        # 确定点类型
+        if describe == "GY M":
+            check = 2
+        elif describe == "EY M":
+            check = 1
+        else:
+            continue
+        # 小处理一下
+        runway = iPoint[0][1:]
+        for iElement in ('-', 'X', 'Y', 'Z'):
+            runway = runway.replace(iElement, '')
+        ident = iPoint[2]
+        point = airportPoints.query(ident)
+        if point == -1:
+            continue
+        if (check == 1) and (runway not in der):  # 跑道点优先级最高
+            der[runway] = point
+        elif check == 2:
+            der[runway] = point
+    # 编码
+    runways = []
+    for iDer in der.keys():
+        point = der[iDer]
+        # 头部
+        runway = "RWY:RW"
+        # 跑道
+        runway += (iDer + (3 - len(iDer)) * ' ')
+        # 跑道坡度 大地高程
+        runway += ",     ,      ,"
+        # 高度
+        runway_alt = 0
+        if airportNow in alt_info:
+            runway_alt = alt_info[airportNow]
+        if (airportNow + '_' + iDer) in alt_info:
+            runway_alt = alt_info[airportNow + '_' + iDer]
+        runway += digit_process(str(runway_alt), 5, 0)
+        # TCH ILS
+        runway += ", ,    , ,   ;"
+        # 经纬度
+        point = str(Point(point.latitude, point.longitude))
+        for iElement in ('m', 's', ',', 'N', 'E'):
+            point = point.replace(iElement, '')
+        point = point.split()
+        point = "N{}{}{},E{}{}{}".format(digit_process(point[0], 2, 0), digit_process(point[1], 2, 0),
+                                         digit_process(point[2], 2, 2), digit_process(point[3], 3, 0),
+                                         digit_process(point[4], 2, 0), digit_process(point[5], 2, 2))
+        runway += point
+        # 跑道内移
+        runway += ",0000;"
+        runways.append(runway)
+    return "\n{}\n".format('\n'.join(runways))
+
+
 inputPath = r"F:\PDF初提取"
 xplanePath = r"E:\steampower\steamapps\common\X-Plane 11\Custom Data"
-csvPath = r"F:\航图\中国民航国内航空资料汇编 NAIP 2312\DataFile\AD_HP.csv"
+csvFolder = r"F:\航图\中国民航国内航空资料汇编 NAIP 2312\DataFile"
 inputFiles = []
 walking(inputPath, inputFiles)
 # 建立xp航点库
 waypoints = WaypointSystem()
 read_points(xplanePath)
 # ta tl
-transHeight = read_csv_trans(csvPath)
+transHeight = read_csv_trans(os.path.join(csvFolder, "AD_HP.csv"))
+# 建立跑道高度
+altitudeDict = altitude_database(csvFolder)
 # 处理程序
 xplanePath = os.path.join(xplanePath, "CIFP")
 for iFilePath in inputFiles:
     if "_db" not in iFilePath:
         continue
-    printf(extract_name(iFilePath)[:4], 3)
+    airportNow = extract_name(iFilePath)[:4]
+    printf(airportNow, 3)
     # 建立单机场航点库
     airportPoints = WaypointSystem()
     read_terminal_points(iFilePath)
+    # 判断是否是新机场
+    existAirport = os.path.exists(os.path.join(xplanePath, airportNow + ".dat"))
     # 处理程序
     with open(iFilePath, 'r', encoding="utf-8") as file:
         file = file.readlines()
@@ -461,12 +584,15 @@ for iFilePath in inputFiles:
         for iProc in procedures:
             iProc.encode()
     # 写入
-    if not os.path.exists(os.path.join(xplanePath, extract_name(iFilePath)[:4] + ".dat")):  # 假如机场不存在程序
+    if not existAirport:  # 假如机场不存在程序
         procText = []
         for iProc in procedures:
             procText.append(iProc.output())
-        airport = open(r".\output\{}.dat".format(extract_name(iFilePath)[:4]), 'w', encoding="utf-8")
-        airport.write('\n'.join(procText))
-        airport.close()
+        cifpFile = open(r".\output\{}.dat".format(airportNow), 'w', encoding="utf-8")
+        procText = '\n'.join(procText)
+        cifpFile.write(procText)
+        procText = procText.split('\n')
+        cifpFile.write(runway_info([i for i in procText if i.startswith("APPCH")], altitudeDict))
+        cifpFile.close()
     else:
-        procedure_mix(extract_name(iFilePath)[:4], xplanePath)
+        procedure_mix(airportNow, xplanePath)
