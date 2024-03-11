@@ -114,7 +114,7 @@ class Procedure:
                 alt = alt.split('A')
                 return ['+', alt[0], "     "]
             else:
-                return ['@', alt, "     "]
+                return [' ', alt, "     "]
 
         global transHeight, airportNow, altitudeDict
         self.create_number()
@@ -237,43 +237,6 @@ def change_code(encode: str, loc: int, char: str, replace: bool = True) -> str:
     if replace:
         encode[loc] = char
     return ''.join(encode)
-
-
-class WaypointSystem:
-    def __init__(self):
-        self.base = dict()
-
-    def add_point(self, point: Waypoint):
-        if point.ident not in self.base:
-            self.base[point.ident] = [point]
-        else:
-            self.base[point.ident].append(point)
-
-    def query(self, submit: Union[str, Waypoint]) -> Union[int, Waypoint]:
-        """
-        在数据库中查询一个航点
-        :param submit: 识别符:str(主用于单机场) 航点类:Waypoint(主用于总数据库)
-        :return: 未找到返回-1 找到返回航点
-        """
-        if type(submit) == str:
-            if submit in self.base:
-                return self.base[submit][0]
-            else:
-                return -1
-        elif type(submit) == Waypoint:
-            if submit.ident in self.base:
-                for iPoint in self.base[submit.ident]:
-                    if iPoint.is_same(submit):
-                        return iPoint
-                else:
-                    return -1
-            else:
-                return -1
-        else:
-            printf("提交表单内容出错", 2)
-
-    def __del__(self):
-        self.base.clear()
 
 
 def read_procedures(file_text: List[str]) -> List[Procedure]:

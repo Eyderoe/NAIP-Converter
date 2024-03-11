@@ -1,3 +1,5 @@
+import os.path
+
 from colorama import init
 
 from 公共函数 import *
@@ -57,15 +59,16 @@ def read_naip_file(file_path: str) -> List[Waypoint]:
 def waypoint_type(ident: str) -> int:
     """根据ARINC424 5.42和XPlane FIX1101初略计算"""
     coding = "W  "  # 默认RNAV航路点
-    return ord(coding[0]) * (2 ** 0) + ord(coding[1]) * (2 ** 8)+ ord(coding[2]) * (2 ** 16)
+    return ord(coding[0]) * (2 ** 0) + ord(coding[1]) * (2 ** 8) + ord(coding[2]) * (2 ** 16)
 
 
 # 突然想写cpp了 艹
 init(autoreset=True)
-forXp11 = True
 naipPath = r"F:\PDF初提取"
-earth_nav = r"E:\steampower\steamapps\common\X-Plane 11\Custom Data\earth_nav.dat"
-earth_fix = r"E:\steampower\steamapps\common\X-Plane 11\Custom Data\earth_fix.dat"
+xplanePath = r"E:\steampower\steamapps\common\X-Plane 11\Custom Data"
+forXp11 = True if "X-Plane 11" in xplanePath else False
+earth_nav = os.path.join(xplanePath, "earth_nav.dat")
+earth_fix = os.path.join(xplanePath, "earth_fix.dat")
 terminal = []
 navigation = []
 naip = []
