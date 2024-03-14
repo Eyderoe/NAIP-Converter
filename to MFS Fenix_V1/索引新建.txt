@@ -1,0 +1,7 @@
+create index identWaypointsIndex on Waypoints (Ident);
+create index icaoTerminalsIndex on Terminals (ICAO);
+create index terminalidTerminalLegsIndex on TerminalLegs (TerminalID);
+create index icaoAirportsIndex on Airports (ICAO);
+create index airportidRunwaysIndex on Runways (AirportID);
+create index identAirwaysIndex on Airways (Ident);
+create index airwayidAirwayLegsIndex on AirwayLegs (AirwayID);
