@@ -7,7 +7,7 @@
 ## PDF extract
 提取数据库编码和航路点编码生成标准文件\
 标准文件可以被读取并输出至不同数据库
-## to MFS Fenix_V1
+## to MFS Fenix
 目标：微软模拟飞行 Fenix nd.db3\
 支持：所有功能
 ## to X-Plane CIFP

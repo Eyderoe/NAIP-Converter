@@ -1,8 +1,0 @@
-drop index identWaypointsIndex;
-drop index icaoTerminalsIndex;
-drop index terminalidTerminalLegsIndex;
-drop index icaoAirportsIndex;
-drop index airportidRunwaysIndex;
-drop index identAirwaysIndex;
-drop index airwayidAirwayLegsIndex;
-vacuum;
