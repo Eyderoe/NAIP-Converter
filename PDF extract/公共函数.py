@@ -1,18 +1,20 @@
 import os
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Dict
 
 import pandas as pd
 from colorama import Fore
 
 
 class Waypoint:
-    def __init__(self, la: float, long: float, ident: str, cat: int, airport: str = '', area: str = ''):
+    def __init__(self, la: float, long: float, ident: str, cat: int, airport: str = '', area: str = '',
+                 changeable: bool = True):
         self.latitude = la
         self.longitude = long
         self.ident = ident
         self.cat = cat  # 建议:-1状态不可用 1航点 2VHF 3NDB
         self.airport = airport
         self.area = area
+        self.changeable = changeable
 
     def is_same(self, fix: "Waypoint", change: bool = False) -> bool:
         """
@@ -25,11 +27,49 @@ class Waypoint:
             return False
         la_error = abs(self.latitude - fix.latitude)
         long_error = abs(self.longitude - fix.longitude)
-        if la_error > 0.2 or long_error > 0.2:
+        if (la_error > 0.2) or (long_error > 0.2):
             return False
-        if change:
+        if change and self.changeable:
             self.airport = "ENRT"
         return True
+
+
+class WaypointSystem:
+    def __init__(self):
+        self.base: Dict[str, List[Waypoint]] = dict()
+
+    def add_point(self, point: Waypoint):
+        if point.ident not in self.base:
+            self.base[point.ident] = [point]
+        else:
+            self.base[point.ident].append(point)
+
+    def query(self, submit: Union[str, Waypoint], change: bool = False) -> Union[int, Waypoint]:
+        """
+        在数据库中查询一个航点
+        :param submit: 识别符:str(主用于单机场) 航点类:Waypoint(主用于总数据库)
+        :param change: 查询时 是否会改变航点区域
+        :return: 未找到返回-1 找到返回航点
+        """
+        if type(submit) == str:
+            if submit in self.base:
+                return self.base[submit][0]
+            else:
+                return -1
+        elif type(submit) == Waypoint:
+            if submit.ident in self.base:
+                for iPoint in self.base[submit.ident]:
+                    if iPoint.is_same(submit, change):
+                        return iPoint
+                else:
+                    return -1
+            else:
+                return -1
+        else:
+            printf("提交表单内容出错", 2)
+
+    def __del__(self):
+        self.base.clear()
 
 
 def get_info(folder: str, aim: str) -> Tuple[List[str], dict]:

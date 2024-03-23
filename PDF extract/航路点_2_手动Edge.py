@@ -2,8 +2,8 @@ from colorama import Fore, init
 from 公共函数 import *
 
 init(autoreset=True)
-inputPath = r".\input\zhqq.txt"
-outputPath = r".\output\zhqq.txt"
+inputPath = r".\input\zlhb.txt"
+outputPath = r".\output\zlhb.txt"
 inputFile = open(inputPath, 'r', encoding="utf-8")
 outputFile = open(outputPath, 'w', encoding="utf-8")
 inputLines = inputFile.readlines()
