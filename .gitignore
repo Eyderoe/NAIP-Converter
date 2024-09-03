@@ -1,0 +1,10 @@
+*.py
+
+*.csv
+*.xlsx
+*.db3
+
+*.dat
+
+*.docx
+*.md

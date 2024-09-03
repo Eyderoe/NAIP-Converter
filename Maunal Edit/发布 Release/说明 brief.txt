@@ -1,0 +1,15 @@
+1. 下载后确保master和workspace在同一文件夹下
+2. 在master下修改config
+3. 在workspace中根据文档编写程序 (可以根据ZUCK的demo)
+4. 运行master下的程序
+   确保运行时XXXX_encode中的所有点在XXXX_waypoint和earth_fix和earth_nav中
+   跑道点比如RW03仅出现在进近程序是不需要的
+5. 正常情况不会出现任何信息，每次会加载所有航点和导航台所以会有点慢
+
+1. make sure master and workspace under the same folder
+2. edit config under master
+3. edit procedure under workspace follow guildence (also the demo of ZUCK)
+4. run the exe under master
+   make sure all fix appear in XXXX_encode should in (XXXX_waypoint earth_fix earth_nav)
+   no need for rwy fix eg.RW03 if RW03 only contain in approach procedure
+5. no info should appear in normal situation, little slow due to load all the waypoints and navaids

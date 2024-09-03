@@ -1,0 +1,15 @@
+# 前两行为导航数据文件路径，以?结尾
+# first two lines should be filepath and end with ?
+
+E:\steampower\steamapps\common\X-Plane 11\Custom Data\earth_fix.dat?
+E:\steampower\steamapps\common\X-Plane 11\Custom Data\earth_nav.dat?
+
+
+# 之后则是机场信息
+# 机场ICAO TA(没有则-) TL(没有则-) 跑道号 高度 ...
+# and then airport info
+# ICAO TA(if unavailable, -) TL(if unavailable, -) runway_ident runway_height
+
+AAAA - - 27 754
+BBBB 5000 7000 13C 2374 31C 2347
+ZUCK - 11800 02L 1351 02R 1349 03 1330 20L 1344 20R 1349 21 1303
